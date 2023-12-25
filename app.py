@@ -275,16 +275,15 @@ def find_similar_and_anagrams():
     return Response(json.dumps(similar_words, ensure_ascii=False),
                     mimetype='application/json')
 
-@app.route('/get_html_from_url', methods=['GET'])
-def get_html_from_url():
+@app.route('/get_html_from_urls', methods=['GET'])
+def get_html_from_urls():
     data = request.json
-    url = data.get('url')
+    urls = data.get('urls')
     
-    html = get_html(url)
+    htmls = [get_html(url) for url in urls]
 
     # JSONレスポンスを生成して返す
-    return Response(json.dumps(html, ensure_ascii=False),
+    return Response(json.dumps(htmls, ensure_ascii=False),
                     mimetype='application/json')
-
 if __name__ == '__main__':
     app.run(debug=True)
