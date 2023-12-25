@@ -300,7 +300,7 @@ def find_similar_and_anagrams():
 
 
 # 最初に与えられたURLから、飛べるリンクをどんどん探していく。例えば、最初のページから飛べるリンクが、1, 2, 3 とあったら、さらに1,2,3のHTMLコンテンツを抜き出してさらにその中に含まれているURLのリンクを調べて、それを繰り返してURLのリンク集を出力。
-@app.route('/get_url_links', method=['POST'])
+@app.route('/get_url_links', methods=['POST'])
 def get_url_links():
     data = request.json
     url = data.get('url')
