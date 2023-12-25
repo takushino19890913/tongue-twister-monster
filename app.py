@@ -275,7 +275,7 @@ def find_similar_and_anagrams():
     return Response(json.dumps(similar_words, ensure_ascii=False),
                     mimetype='application/json')
 
-@app.route('/get_html_from_urls', methods=['GET'])
+@app.route('/get_html_from_urls', methods=['POST'])
 def get_html_from_urls():
     data = request.json
     urls = data.get('urls')
