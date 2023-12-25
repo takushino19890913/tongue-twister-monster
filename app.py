@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
 from flask import Flask, request, Response
 import json
 import Levenshtein
@@ -182,6 +184,26 @@ def get_html(url):
             return f"Failed to retrieve the webpage: Status code {response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
+    
+def get_links_from_url(url):
+    html = get_html(url)
+    if html:
+        # BeautifulSoupを使用してHTMLを解析
+        soup = BeautifulSoup(html, 'html.parser')
+        # <a>タグを見つける
+        links = soup.find_all('a')
+        # <a>タグのhref属性を取得
+        hrefs = [link.get('href') for link in links]
+        # 絶対URLに変換
+        absolute_hrefs = [urljoin(url, href) for href in hrefs]
+        # 再帰的にリンクを取得
+        all_links = []
+        for href in absolute_hrefs:
+            all_links.extend(get_links_from_url(href))
+        # 全てのリンクを返す
+        return all_links
+    else:
+        return []
 
 @app.route('/get_youon_words', methods=['POST'])
 def get_youon_words():
@@ -273,6 +295,20 @@ def find_similar_and_anagrams():
 
     # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
+                    mimetype='application/json')
+
+
+
+# 最初に与えられたURLから、飛べるリンクをどんどん探していく。例えば、最初のページから飛べるリンクが、1, 2, 3 とあったら、さらに1,2,3のHTMLコンテンツを抜き出してさらにその中に含まれているURLのリンクを調べて、それを繰り返してURLのリンク集を出力。
+@app.route('/get_url_links', method=['POST'])
+def get_url_links():
+    data = request.json
+    url = data.get('url')
+    
+    links = get_links_from_url(url)
+
+    # JSONレスポンスを生成して返す
+    return Response(json.dumps(links, ensure_ascii=False),
                     mimetype='application/json')
 
 @app.route('/get_html_from_urls', methods=['POST'])
