@@ -1,2 +1,5 @@
 get-roman-dictionary.py
 test_app.py
+.vercel
+get_onomatope_dictionary.py
+get_allwords.py

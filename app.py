@@ -3,11 +3,12 @@ import json
 import Levenshtein
 import pykakasi
 import itertools
+import requests
 
 app = Flask(__name__)
 
 # JSONファイルからデータを読み込む
-with open('japanese_words.json', 'r', encoding='utf-8') as jsonfile:
+with open('allwords.json', 'r', encoding='utf-8') as jsonfile:
     japanese_words = json.load(jsonfile)
 
 # kakasiの新しいAPIを使用して初期化
@@ -65,6 +66,57 @@ def convert_to_romaji(text):
 
     return romaji
 
+#言いづらさを評価する評価関数
+def evaluate_word(word):
+    # wordのローマ字を取得
+    romaji = convert_to_romaji(word)
+    # ローマ字を特定のセットに分割する
+    parts = split_into_parts(romaji)
+    # ま行が多く含まれているとポイントゲット
+    points = sum(part in ['ma', 'mi', 'mu', 'me', 'mo'] for part in parts)
+
+
+def get_youon(word):
+    #もし、 wordが「か行、さ行、た行、な行、は行、ま行、ら行」の文字を含む場合、その行の拗音を早口言葉のワード候補に入れる
+    youon_list = []
+    # 各行の文字と対応する拗音
+    rows = {
+        "ま行": (["ま", "み", "む", "め", "も","ば", "び", "ぶ", "べ", "ぼ","ぱ", "ぴ", "ぷ", "ぺ", "ぽ"], ["みゃ","みゅ","みょ","びゃ","びゅ","びょ","ぴゃ","ぴゅ","ぴょ"]),
+        "か行": (["か", "き", "く", "け", "こ","が", "ぎ", "ぐ", "げ", "ご"], ["きゃ","きゅ","きょ","ぎゃ","ぎゅ","ぎょ"]),
+        "な行": (["な", "に", "ぬ", "ね", "の"], ["にゃ","にゅ","にょ"]),
+        "ら行": (["ら", "り", "る", "れ", "ろ"], ["りゃ","りゅ","りょ"]),
+        "さ行": (["さ", "し", "す", "せ", "そ","ざ", "じ", "ず", "ぜ", "ぞ"], ["しゃ","しゅ","しょ","じゃ","じゅ","じょ","ぢゃ","ぢゅ","ぢょ"]),
+        "た行": (["た", "ち", "つ", "て", "と"], ["ちゃ","ちゅ","ちょ"]),
+    }
+
+    # Count the occurrences of each group's characters in the word
+    # 各行の文字が単語に何回出現するかをカウントする
+    counts = {}
+    for row, (chars, youon) in rows.items():
+        # 単語内の各文字の出現回数をカウントし、その合計を取得
+        counts[row] = sum(word.count(char) for char in chars)
+ # 最大のカウントを持つ行を見つける
+    max_row = max(counts, key=counts.get)
+
+    # 最大のカウントを持つ行の拗音を返す
+    for row, (chars, youon) in rows.items():
+        if row == max_row:
+            return youon
+
+
+    return youon_list
+
+def get_youon_word(youon_list):
+    # 早口言葉のワード候補を作成する
+    youon_word_list = []
+    for youon in youon_list:
+        # youonを含む単語をjaonese_wordsから探す
+        for word, romaji in japanese_words.items():
+            for part in split_into_parts(romaji):
+                if convert_to_romaji(youon) == part:
+                    youon_word_list.append(word)
+                    break
+    return youon_word_list
 
 # アナグラムを生成
 def generate_anagrams(word):
@@ -96,7 +148,7 @@ def split_into_parts(romaji_word):
             # "-"は独立した発音単位
             parts.append('-')
             i += 1
-        elif romaji_word[i] in "kstnhmr" and i < len(romaji_word) - 2 and romaji_word[i + 1] == 'y':
+        elif romaji_word[i] in "kstnhmrpbg" and i < len(romaji_word) - 2 and romaji_word[i + 1] == 'y':
             # 「にゃ」「にゅ」「にょ」の処理
             parts.append(romaji_word[i:i + 3])
             i += 3
@@ -117,6 +169,29 @@ def split_into_parts(romaji_word):
             parts.append(romaji_word[i])
             i += 1
     return parts
+
+
+def get_html(url):
+    try:
+        # Sending a HTTP request to the specified URL
+        response = requests.get(url)
+        # Checking if the request was successful (HTTP Status Code 200)
+        if response.status_code == 200:
+            return response.text  # return the HTML content of the page
+        else:
+            return f"Failed to retrieve the webpage: Status code {response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
+
+@app.route('/get_youon_words', methods=['POST'])
+def get_youon_words():
+    data = request.json
+    word = data.get('word')
+    youon_list = get_youon(word)
+    youon_word_list = get_youon_word(youon_list)
+    # JSONレスポンスを生成して返す
+    return Response(json.dumps(youon_word_list, ensure_ascii=False),
+                    mimetype='application/json')
 
 # アナグラムを見つけるAPIルート
 @app.route('/find_anagrams', methods=['POST'])
@@ -146,10 +221,17 @@ def find_similar_words():
     for jap_word, romaji in japanese_words.items():
         if Levenshtein.distance(romaji_word, romaji) <= threshold:
             similar_words.append(jap_word)
+        # wordとおなじ言葉を含んでいる単語を見つける
+        # 例: momo => sumomo
+        elif romaji_word in romaji:
+            similar_words.append(jap_word)
+    
+    
 
      # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
                     mimetype='application/json')
+
 
 @app.route('/find_similar_and_anagrams', methods=['POST'])
 def find_similar_and_anagrams():
@@ -160,12 +242,16 @@ def find_similar_and_anagrams():
     romaji_word = convert_to_romaji(word)
 
     # 閾値を設定（入力単語の長さの半分）
-    threshold = len(romaji_word) // 4
+    threshold = len(romaji_word) // 5
 
     # 音が似ている単語を見つける
     similar_words = []
     for jap_word, romaji in japanese_words.items():
         if Levenshtein.distance(romaji_word, romaji) <= threshold:
+            similar_words.append(jap_word)
+        # wordとおなじ言葉を含んでいる単語を見つける
+        # 例: momo => sumomo
+        elif romaji_word in romaji:
             similar_words.append(jap_word)
 
     # アナグラムを生成
@@ -177,13 +263,28 @@ def find_similar_and_anagrams():
         for jap_word, romaji in japanese_words.items():
             if Levenshtein.distance(anagram_romaji, romaji) <= threshold and jap_word not in similar_words:
                 similar_words.append(jap_word)
+            # wordとおなじ言葉を含んでいる単語を見つける
+            # 例: momo => sumomo
+            elif anagram_romaji in romaji:
+                similar_words.append(jap_word)
+
+    # similar_wordsの重複を削除
+    similar_words = list(set(similar_words))
 
     # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
                     mimetype='application/json')
 
+@app.route('/get_html_from_url', methods=['GET'])
+def get_html_from_url():
+    data = request.json
+    url = data.get('url')
+    
+    html = get_html(url)
 
-
+    # JSONレスポンスを生成して返す
+    return Response(json.dumps(html, ensure_ascii=False),
+                    mimetype='application/json')
 
 if __name__ == '__main__':
     app.run(debug=True)
