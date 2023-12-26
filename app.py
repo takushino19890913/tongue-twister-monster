@@ -173,7 +173,7 @@ def split_into_parts(romaji_word):
     return parts
 
 
-def get_html(url):
+def get_html_text(url):
     try:
         # Sending a HTTP request to the specified URL
         response = requests.get(url)
@@ -191,7 +191,21 @@ def get_html(url):
             return f"Failed to retrieve the webpage: Status code {response.status_code}"
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
-    
+
+def get_html(url):
+    try:
+        # Sending a HTTP request to the specified URL
+        response = requests.get(url)
+        # Checking if the request was successful (HTTP Status Code 200)
+        # Htmlのbody部分のみを取得するにはどうするか？
+        # Use BeautifulSoup to parse the HTML content
+
+        if response.status_code == 200:
+            return response.text # return the HTML content of the page
+        else:
+            return f"Failed to retrieve the webpage: Status code {response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
 def get_links_from_url(url):
     html = get_html(url)
     if html:
@@ -200,7 +214,8 @@ def get_links_from_url(url):
         links = []
         for link in soup.find_all('a'):
             href = link.get('href')
-            if href and href.startswith('http'):
+            print(href)
+            if href:
                 links.append(href)
         return links
 
@@ -312,12 +327,12 @@ def get_url_links():
     return Response(json.dumps(links, ensure_ascii=False),
                     mimetype='application/json')
 
-@app.route('/get_html_from_urls', methods=['POST'])
-def get_html_from_urls():
+@app.route('/get_html_text_from_urls', methods=['POST'])
+def get_html_text_from_urls():
     data = request.json
     urls = data.get('urls')
 
-    htmls = [get_html(url) for url in urls]
+    htmls = [get_html_text(url) for url in urls]
 
     # JSONレスポンスを生成して返す
     return Response(json.dumps(htmls, ensure_ascii=False),
