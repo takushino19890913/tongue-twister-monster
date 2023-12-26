@@ -178,8 +178,16 @@ def get_html(url):
         # Sending a HTTP request to the specified URL
         response = requests.get(url)
         # Checking if the request was successful (HTTP Status Code 200)
+        # Htmlのbody部分のみを取得するにはどうするか？
+        # Use BeautifulSoup to parse the HTML content
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # Extract the body of the HTML
+        body = soup.body
+        # Convert the body back to a string
+        body_html = str(body)
+
         if response.status_code == 200:
-            return response.text  # return the HTML content of the page
+            return body_html # return the HTML content of the page
         else:
             return f"Failed to retrieve the webpage: Status code {response.status_code}"
     except requests.exceptions.RequestException as e:
@@ -188,22 +196,14 @@ def get_html(url):
 def get_links_from_url(url):
     html = get_html(url)
     if html:
-        # BeautifulSoupを使用してHTMLを解析
+        #htmlの中に、http://かhttps://で始まるリンクを探す
         soup = BeautifulSoup(html, 'html.parser')
-        # <a>タグを見つける
-        links = soup.find_all('a')
-        # <a>タグのhref属性を取得
-        hrefs = [link.get('href') for link in links]
-        # 絶対URLに変換
-        absolute_hrefs = [urljoin(url, href) for href in hrefs]
-        # 再帰的にリンクを取得
-        all_links = []
-        for href in absolute_hrefs:
-            all_links.extend(get_links_from_url(href))
-        # 全てのリンクを返す
-        return all_links
-    else:
-        return []
+        links = []
+        for link in soup.find_all('a'):
+            href = link.get('href')
+            if href and href.startswith('http'):
+                links.append(href)
+        return links
 
 @app.route('/get_youon_words', methods=['POST'])
 def get_youon_words():
@@ -304,6 +304,8 @@ def find_similar_and_anagrams():
 def get_url_links():
     data = request.json
     url = data.get('url')
+
+    print(url)
     
     links = get_links_from_url(url)
 
@@ -315,11 +317,14 @@ def get_url_links():
 def get_html_from_urls():
     data = request.json
     urls = data.get('urls')
+    print(urls)
     
     htmls = [get_html(url) for url in urls]
 
     # JSONレスポンスを生成して返す
     return Response(json.dumps(htmls, ensure_ascii=False),
                     mimetype='application/json')
+
+
 if __name__ == '__main__':
     app.run(debug=True)
