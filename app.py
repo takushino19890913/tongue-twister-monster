@@ -181,13 +181,12 @@ def get_html(url):
         # Htmlのbody部分のみを取得するにはどうするか？
         # Use BeautifulSoup to parse the HTML content
         soup = BeautifulSoup(response.text, 'html.parser')
-        # Extract the body of the HTML
-        body = soup.body
-        # Convert the body back to a string
-        body_html = str(body)
+
+        # HTML codeではなく、文字コンテンツとそのリンクを取得するにはどうするか？
+        body_text = soup.get_text()
 
         if response.status_code == 200:
-            return body_html # return the HTML content of the page
+            return body_text # return the HTML content of the page
         else:
             return f"Failed to retrieve the webpage: Status code {response.status_code}"
     except requests.exceptions.RequestException as e:
@@ -317,8 +316,7 @@ def get_url_links():
 def get_html_from_urls():
     data = request.json
     urls = data.get('urls')
-    print(urls)
-    
+
     htmls = [get_html(url) for url in urls]
 
     # JSONレスポンスを生成して返す
