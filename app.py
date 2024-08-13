@@ -274,39 +274,48 @@ def find_similar_and_anagrams():
     # ローマ字に変換
     romaji_word = convert_to_romaji(word)
 
-    # 閾値を設定（入力単語の長さの半分）
+    # 初期の閾値を設定（入力単語の長さの1/5）
     threshold = len(romaji_word) // 5
 
-    # 音が似ている単語を見つける
     similar_words = []
-    romaji_variants = generate_romaji_variants(romaji_word)
-    for variant in romaji_variants:
-        for jap_word, romaji in japanese_words.items():
-            if Levenshtein.distance(variant, romaji) <= threshold:
-                similar_words.append(jap_word)
-            # wordとおなじ言葉を含んでいる単語を見つける
-            # 例: momo => sumomo
-            elif variant in romaji:
-                similar_words.append(jap_word)
-
-    # アナグラムを生成
-    anagrams = generate_anagrams(word)
-
-    # アナグラムに似ている単語も追加
-    for anagram in anagrams:
-        anagram_romaji = convert_to_romaji(anagram)
-        anagram_variants = generate_romaji_variants(romaji_word)
-        for variant in anagram_variants:
+    while len(similar_words) <= 5:
+        # 音が似ている単語を見つける
+        similar_words = []
+        romaji_variants = generate_romaji_variants(romaji_word)
+        for variant in romaji_variants:
             for jap_word, romaji in japanese_words.items():
-                if Levenshtein.distance(anagram_romaji, romaji) <= threshold and jap_word not in similar_words:
+                if Levenshtein.distance(variant, romaji) <= threshold:
                     similar_words.append(jap_word)
                 # wordとおなじ言葉を含んでいる単語を見つける
                 # 例: momo => sumomo
-                elif anagram_romaji in romaji:
+                elif variant in romaji:
                     similar_words.append(jap_word)
 
-    # similar_wordsの重複を削除
-    similar_words = list(set(similar_words))
+        # アナグラムを生成
+        anagrams = generate_anagrams(word)
+
+        # アナグラムに似ている単語も追加
+        for anagram in anagrams:
+            anagram_romaji = convert_to_romaji(anagram)
+            anagram_variants = generate_romaji_variants(romaji_word)
+            for variant in anagram_variants:
+                for jap_word, romaji in japanese_words.items():
+                    if Levenshtein.distance(anagram_romaji, romaji) <= threshold and jap_word not in similar_words:
+                        similar_words.append(jap_word)
+                    # wordとおなじ言葉を含んでいる単語を見つける
+                    # 例: momo => sumomo
+                    elif anagram_romaji in romaji:
+                        similar_words.append(jap_word)
+
+        # similar_wordsの重複を削除
+        similar_words = list(set(similar_words))
+
+        # 閾値を増加させる
+        threshold += 1
+
+        # しきい値が単語の長さを超えた場合はループを終了
+        if threshold > len(romaji_word):
+            break
 
     # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
