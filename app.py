@@ -311,13 +311,13 @@ def find_similar_and_anagrams():
 
     # ローマ字に変換
     romaji_word = convert_to_romaji(word)
-    two_letters_romaji_variants = two_letters_romaji_variants(romaji_word)
-    three_letters_romaji_variants = three_letters_romaji_variants(romaji_word)
+    two_letter_variants = two_letters_romaji_variants(romaji_word)
+    three_letter_variants = three_letters_romaji_variants(romaji_word)
 
-    # 初期の閾値を設定（入力単語の長さの1/7）
+    # 初期の閾値を設定（入力単語の長さの1/5）
     threshold = len(romaji_word) // 5
-    two_letters_threshold = len(4) // 5
-    three_letters_threshold = len(6) // 5
+    two_letters_threshold = len(romaji_word[:2]) // 5
+    three_letters_threshold = len(romaji_word[:3]) // 5
 
     similar_words = []
     while len(similar_words) <= 5:
@@ -333,16 +333,15 @@ def find_similar_and_anagrams():
                 elif variant in romaji:
                     similar_words.append(jap_word)
 
-        for variant in three_letters_romaji_variants:
+        for variant in three_letter_variants:
             for jap_word, romaji in japanese_words.items():
                 if Levenshtein.distance(variant, romaji) <= three_letters_threshold:
                     similar_words.append(jap_word)
 
-        for variant in two_letters_romaji_variants:
+        for variant in two_letter_variants:
             for jap_word, romaji in japanese_words.items():
                 if Levenshtein.distance(variant, romaji) <= two_letters_threshold:
                     similar_words.append(jap_word)
-
 
         # アナグラムを生成
         anagrams = generate_anagrams(word)
