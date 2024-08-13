@@ -238,6 +238,7 @@ def three_letters_romaji_variants(romaji_word):
     return romaji_variants
 
 def two_letters_romaji_variants(romaji_word):
+    romaji_variants = []
     # 最初の2文字と最後の2文字を追加
     parts = split_into_parts(romaji_word)
     if len(parts) >= 2:
