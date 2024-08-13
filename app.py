@@ -172,6 +172,49 @@ def split_into_parts(romaji_word):
             i += 1
     return parts
 
+def replace_youon_with_normal(romaji):
+    replacements = {
+        'kya': 'ki', 'kyu': 'ki', 'kyo': 'ki',
+        'sya': 'si', 'syu': 'si', 'syo': 'si',
+        'tya': 'ti', 'tyu': 'ti', 'tyo': 'ti',
+        'nya': 'ni', 'nyu': 'ni', 'nyo': 'ni',
+        'hya': 'hi', 'hyu': 'hi', 'hyo': 'hi',
+        'mya': 'mi', 'myu': 'mi', 'myo': 'mi',
+        'rya': 'ri', 'ryu': 'ri', 'ryo': 'ri',
+        'gya': 'gi', 'gyu': 'gi', 'gyo': 'gi',
+        'ja': 'ji', 'ju': 'ji', 'jo': 'ji',
+        'bya': 'bi', 'byu': 'bi', 'byo': 'bi',
+        'pya': 'pi', 'pyu': 'pi', 'pyo': 'pi'
+    }
+    for youon, normal in replacements.items():
+        romaji = romaji.replace(youon, normal)
+    return romaji
+
+def replace_normal_with_youon(romaji):
+    replacements = {
+        'ki': ['kya', 'kyu', 'kyo'],
+        'si': ['sya', 'syu', 'syo'],
+        'ti': ['tya', 'tyu', 'tyo'],
+        'ni': ['nya', 'nyu', 'nyo'],
+        'hi': ['hya', 'hyu', 'hyo'],
+        'mi': ['mya', 'myu', 'myo'],
+        'ri': ['rya', 'ryu', 'ryo'],
+        'gi': ['gya', 'gyu', 'gyo'],
+        'ji': ['ja', 'ju', 'jo'],
+        'bi': ['bya', 'byu', 'byo'],
+        'pi': ['pya', 'pyu', 'pyo']
+    }
+    youon_variants = [romaji]
+    for normal, youons in replacements.items():
+        if normal in romaji:
+            for youon in youons:
+                youon_variants.append(romaji.replace(normal, youon))
+    return youon_variants
+
+def generate_romaji_variants(romaji_word):
+    romaji_variants = [romaji_word, replace_youon_with_normal(romaji_word)] + replace_normal_with_youon(romaji_word)
+    return romaji_variants
+
 
 @app.route('/get_youon_words', methods=['POST'])
 def get_youon_words():
@@ -205,51 +248,9 @@ def find_similar_words():
 
     # 閾値を設定（入力単語の長さの1/3）
     threshold = len(romaji_word) // 3
-
-    # 拗音を普通の音に変換
-    def replace_youon_with_normal(romaji):
-        replacements = {
-            'kya': 'ki', 'kyu': 'ki', 'kyo': 'ki',
-            'sya': 'si', 'syu': 'si', 'syo': 'si',
-            'tya': 'ti', 'tyu': 'ti', 'tyo': 'ti',
-            'nya': 'ni', 'nyu': 'ni', 'nyo': 'ni',
-            'hya': 'hi', 'hyu': 'hi', 'hyo': 'hi',
-            'mya': 'mi', 'myu': 'mi', 'myo': 'mi',
-            'rya': 'ri', 'ryu': 'ri', 'ryo': 'ri',
-            'gya': 'gi', 'gyu': 'gi', 'gyo': 'gi',
-            'ja': 'ji', 'ju': 'ji', 'jo': 'ji',
-            'bya': 'bi', 'byu': 'bi', 'byo': 'bi',
-            'pya': 'pi', 'pyu': 'pi', 'pyo': 'pi'
-        }
-        for youon, normal in replacements.items():
-            romaji = romaji.replace(youon, normal)
-        return romaji
-
-    # 普通の音を拗音に変換
-    def replace_normal_with_youon(romaji):
-        replacements = {
-            'ki': ['kya', 'kyu', 'kyo'],
-            'si': ['sya', 'syu', 'syo'],
-            'ti': ['tya', 'tyu', 'tyo'],
-            'ni': ['nya', 'nyu', 'nyo'],
-            'hi': ['hya', 'hyu', 'hyo'],
-            'mi': ['mya', 'myu', 'myo'],
-            'ri': ['rya', 'ryu', 'ryo'],
-            'gi': ['gya', 'gyu', 'gyo'],
-            'ji': ['ja', 'ju', 'jo'],
-            'bi': ['bya', 'byu', 'byo'],
-            'pi': ['pya', 'pyu', 'pyo']
-        }
-        youon_variants = [romaji]
-        for normal, youons in replacements.items():
-            if normal in romaji:
-                for youon in youons:
-                    youon_variants.append(romaji.replace(normal, youon))
-        return youon_variants
-
     # Levenshtein距離を計算して似ている単語を見つける
     similar_words = []
-    romaji_variants = [romaji_word, replace_youon_with_normal(romaji_word)] + replace_normal_with_youon(romaji_word)
+    romaji_variants = generate_romaji_variants(romaji_word)
     for variant in romaji_variants:
         for jap_word, romaji in japanese_words.items():
             # Levenshtein距離を計算
@@ -278,13 +279,15 @@ def find_similar_and_anagrams():
 
     # 音が似ている単語を見つける
     similar_words = []
-    for jap_word, romaji in japanese_words.items():
-        if Levenshtein.distance(romaji_word, romaji) <= threshold:
-            similar_words.append(jap_word)
-        # wordとおなじ言葉を含んでいる単語を見つける
-        # 例: momo => sumomo
-        elif romaji_word in romaji:
-            similar_words.append(jap_word)
+    romaji_variants = generate_romaji_variants(romaji_word)
+    for variant in romaji_variants:
+        for jap_word, romaji in japanese_words.items():
+            if Levenshtein.distance(variant, romaji) <= threshold:
+                similar_words.append(jap_word)
+            # wordとおなじ言葉を含んでいる単語を見つける
+            # 例: momo => sumomo
+            elif variant in romaji:
+                similar_words.append(jap_word)
 
     # アナグラムを生成
     anagrams = generate_anagrams(word)
@@ -292,13 +295,15 @@ def find_similar_and_anagrams():
     # アナグラムに似ている単語も追加
     for anagram in anagrams:
         anagram_romaji = convert_to_romaji(anagram)
-        for jap_word, romaji in japanese_words.items():
-            if Levenshtein.distance(anagram_romaji, romaji) <= threshold and jap_word not in similar_words:
-                similar_words.append(jap_word)
-            # wordとおなじ言葉を含んでいる単語を見つける
-            # 例: momo => sumomo
-            elif anagram_romaji in romaji:
-                similar_words.append(jap_word)
+        anagram_variants = generate_romaji_variants(romaji_word)
+        for variant in anagram_variants:
+            for jap_word, romaji in japanese_words.items():
+                if Levenshtein.distance(anagram_romaji, romaji) <= threshold and jap_word not in similar_words:
+                    similar_words.append(jap_word)
+                # wordとおなじ言葉を含んでいる単語を見つける
+                # 例: momo => sumomo
+                elif anagram_romaji in romaji:
+                    similar_words.append(jap_word)
 
     # similar_wordsの重複を削除
     similar_words = list(set(similar_words))
