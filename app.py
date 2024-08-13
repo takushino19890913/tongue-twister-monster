@@ -336,15 +336,15 @@ def find_similar_and_anagrams():
 
         for variant in three_letter_variants:
             for jap_word, romaji in japanese_words.items():
-                if Levenshtein.distance(variant, romaji) <= three_letters_threshold:
+                #variantがjapanese_wordsのromajiに含まれているか
+                if variant in romaji:
                     similar_words.append(jap_word)
 
         for variant in two_letter_variants:
             for jap_word, romaji in japanese_words.items():
-                if Levenshtein.distance(variant, romaji) <= two_letters_threshold:
+                 if variant in romaji:
                     similar_words.append(jap_word)
-
-        # アナグラムを生成
+                    
         anagrams = generate_anagrams(word)
 
         # アナグラムに似ている単語も追加
