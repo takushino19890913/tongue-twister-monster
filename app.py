@@ -317,8 +317,8 @@ def find_similar_and_anagrams():
 
     # 初期の閾値を設定（入力単語の長さの1/5）
     threshold = len(romaji_word) // 5
-    two_letters_threshold = 4 // 3
-    three_letters_threshold = 6 // 4
+    two_letters_threshold = 4 // 7
+    three_letters_threshold = 6 // 6
 
     similar_words = []
     while len(similar_words) <= 5:
