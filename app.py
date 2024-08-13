@@ -317,9 +317,6 @@ def find_similar_and_anagrams():
 
     # 初期の閾値を設定（入力単語の長さの1/5）
     threshold = len(romaji_word) // 5
-    two_letters_threshold = 4 // 5.5
-    three_letters_threshold = 6 // 5
-
     similar_words = []
     while len(similar_words) <= 5:
         # 音が似ている単語を見つける
@@ -359,16 +356,27 @@ def find_similar_and_anagrams():
             break
 
     for variant in three_letter_variants:
-            for jap_word, romaji in japanese_words.items():
-                #variantがjapanese_wordsのromajiに含まれているか
+        for jap_word, romaji in japanese_words.items():
+            # variantがリストの場合、各要素をチェック
+            if isinstance(variant, list):
+                for v in variant:
+                    if v in romaji:
+                        similar_words.append(jap_word)
+            else:
                 if variant in romaji:
                     similar_words.append(jap_word)
 
     for variant in two_letter_variants:
         for jap_word, romaji in japanese_words.items():
+            # variantがリストの場合、各要素をチェック
+            if isinstance(variant, list):
+                for v in variant:
+                    if v in romaji:
+                        similar_words.append(jap_word)
+            else:
                 if variant in romaji:
                     similar_words.append(jap_word)
-                    
+                        
     # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
                     mimetype='application/json')
