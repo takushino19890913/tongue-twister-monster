@@ -213,6 +213,18 @@ def replace_normal_with_youon(romaji):
 
 def generate_romaji_variants(romaji_word):
     romaji_variants = [romaji_word, replace_youon_with_normal(romaji_word)] + replace_normal_with_youon(romaji_word)
+    
+    # 最初の2文字と最後の2文字を追加
+    if len(romaji_word) >= 2:
+        prefix = romaji_word[:2]
+        suffix = romaji_word[-2:]
+        romaji_variants.append(prefix)
+        romaji_variants.append(suffix)
+        romaji_variants.append(replace_youon_with_normal(prefix))
+        romaji_variants.append(replace_youon_with_normal(suffix))
+        romaji_variants += replace_normal_with_youon(prefix)
+        romaji_variants += replace_normal_with_youon(suffix)
+    
     return romaji_variants
 
 
