@@ -333,18 +333,6 @@ def find_similar_and_anagrams():
                 # 例: momo => sumomo
                 elif variant in romaji:
                     similar_words.append(jap_word)
-
-        for variant in three_letter_variants:
-            for jap_word, romaji in japanese_words.items():
-                #variantがjapanese_wordsのromajiに含まれているか
-                if variant in romaji:
-                    similar_words.append(jap_word)
-
-        for variant in two_letter_variants:
-            for jap_word, romaji in japanese_words.items():
-                 if variant in romaji:
-                    similar_words.append(jap_word)
-                    
         anagrams = generate_anagrams(word)
 
         # アナグラムに似ている単語も追加
@@ -370,6 +358,17 @@ def find_similar_and_anagrams():
         if threshold > len(romaji_word):
             break
 
+    for variant in three_letter_variants:
+            for jap_word, romaji in japanese_words.items():
+                #variantがjapanese_wordsのromajiに含まれているか
+                if variant in romaji:
+                    similar_words.append(jap_word)
+
+    for variant in two_letter_variants:
+        for jap_word, romaji in japanese_words.items():
+                if variant in romaji:
+                    similar_words.append(jap_word)
+                    
     # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
                     mimetype='application/json')
