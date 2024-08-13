@@ -222,7 +222,7 @@ def three_letters_romaji_variants(romaji_word):
     romaji_variants = []
     # 最初の3文字と最後の3文字を追加
     parts = split_into_parts(romaji_word)
-    if len(parts) >= 3:
+    if len(parts) >= 5:
         prefix = ''.join(parts[:3])
         suffix = ''.join(parts[-3:])
         romaji_variants.append(prefix)
@@ -241,7 +241,7 @@ def two_letters_romaji_variants(romaji_word):
     romaji_variants = []
     # 最初の2文字と最後の2文字を追加
     parts = split_into_parts(romaji_word)
-    if len(parts) >= 2:
+    if len(parts) >= 4:
         prefix = ''.join(parts[:2])
         suffix = ''.join(parts[-2:])
         romaji_variants.append(prefix)
@@ -317,8 +317,8 @@ def find_similar_and_anagrams():
 
     # 初期の閾値を設定（入力単語の長さの1/5）
     threshold = len(romaji_word) // 5
-    two_letters_threshold = 4 // 5
-    three_letters_threshold = 6 // 5
+    two_letters_threshold = 4 // 3
+    three_letters_threshold = 6 // 4
 
     similar_words = []
     while len(similar_words) <= 5:
