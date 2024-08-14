@@ -346,7 +346,7 @@ def find_similar_and_anagrams():
     # 初期の閾値を設定（入力単語の長さの1/5）
     threshold = len(romaji_word) // 5
     similar_words = []
-    while len(similar_words) <= 5:
+    while len(similar_words) <= 10:
         # 音が似ている単語を見つける
         similar_words = []
         romaji_variants = generate_romaji_variants(romaji_word)
@@ -375,6 +375,26 @@ def find_similar_and_anagrams():
 
         # similar_wordsの重複を削除
         similar_words = list(set(similar_words))
+        for variant in three_letters_romaji_variants_prefix_list:
+            for jap_word, romaji in japanese_words.items():
+                if romaji.endswith(variant):
+                    similar_words.append(jap_word)
+    
+        for variant in three_letters_romaji_variants_suffix_list:
+            for jap_word, romaji in japanese_words.items():
+                    if romaji.startswith(variant):
+                        similar_words.append(jap_word)
+
+        for variant in two_letter_variants_prefix_list:
+            for jap_word, romaji in japanese_words.items():
+                if romaji.endswith(variant):
+                    similar_words.append(jap_word)
+        
+        for variant in two_letter_variants_suffix_list:
+            for jap_word, romaji in japanese_words.items():
+                if romaji.startswith(variant):
+                    similar_words.append(jap_word)
+                        
 
         # 閾値を増加させる
         threshold += 1
@@ -383,26 +403,7 @@ def find_similar_and_anagrams():
         if threshold > len(romaji_word):
             break
 
-    for variant in three_letters_romaji_variants_prefix_list:
-        for jap_word, romaji in japanese_words.items():
-                if romaji.endswith(variant):
-                    similar_words.append(jap_word)
-    
-    for variant in three_letters_romaji_variants_suffix_list:
-        for jap_word, romaji in japanese_words.items():
-                if romaji.startswith(variant):
-                    similar_words.append(jap_word)
 
-    for variant in two_letter_variants_prefix_list:
-        for jap_word, romaji in japanese_words.items():
-            if romaji.endswith(variant):
-                similar_words.append(jap_word)
-    
-    for variant in two_letter_variants_suffix_list:
-        for jap_word, romaji in japanese_words.items():
-            if romaji.startswith(variant):
-                similar_words.append(jap_word)
-                        
     # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
                     mimetype='application/json')
