@@ -215,17 +215,17 @@ def replace_youon_with_normal(romaji):
 
 def replace_normal_with_youon(romaji):
     replacements = {
-        'ki': ['kya', 'kyu', 'kyo'],
-        'si': ['sya', 'syu', 'syo'],
-        'ti': ['tya', 'tyu', 'tyo'],
+        'ki': ['kya', 'kyu', 'kyo','gya', 'gyu', 'gyo'],
+        'si': ['sya', 'syu', 'syo','ja', 'ju', 'jo'],
+        'ti': ['tya', 'tyu', 'tyo','ja', 'ju', 'jo'],
         'ni': ['nya', 'nyu', 'nyo'],
-        'hi': ['hya', 'hyu', 'hyo'],
+        'hi': ['hya', 'hyu', 'hyo','bya', 'byu', 'byo','pya', 'pyu', 'pyo'],
         'mi': ['mya', 'myu', 'myo'],
         'ri': ['rya', 'ryu', 'ryo'],
-        'gi': ['gya', 'gyu', 'gyo'],
-        'ji': ['ja', 'ju', 'jo'],
-        'bi': ['bya', 'byu', 'byo'],
-        'pi': ['pya', 'pyu', 'pyo']
+        'gi': ['gya', 'gyu', 'gyo','kya', 'kyu', 'kyo'],
+        'ji': ['ja', 'ju', 'jo','sya', 'syu', 'syo','tya', 'tyu', 'tyo'],
+        'bi': ['bya', 'byu', 'byo','hya', 'hyu', 'hyo','pya', 'pyu', 'pyo'],
+        'pi': ['hya', 'hyu', 'hyo','bya', 'byu', 'byo','pya', 'pyu', 'pyo']
     }
     youon_variants = [romaji]
     for normal, youons in replacements.items():
