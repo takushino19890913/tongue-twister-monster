@@ -128,6 +128,7 @@ def generate_anagrams(word):
 def generate_anagram_with_romaji_word(romaji_word):
     parts = split_into_parts(romaji_word)
     anagrams = set([''.join(p) for p in itertools.permutations(parts)])
+    print(anagrams)
 
     # 一致する日本語の単語を見つける
     matching_words = []
@@ -135,9 +136,28 @@ def generate_anagram_with_romaji_word(romaji_word):
         if anagram in japanese_words.values():
             # 対応する日本語の単語を追加
             matching_words.extend([jap_word for jap_word, romaji in japanese_words.items() if romaji == anagram])
+    
+    print(matching_words)
 
     return matching_words  # 重複を除かずにリストを返す
 
+def generate_romaji_anagram_with_romaji_word(romaji_word):
+    parts = split_into_parts(romaji_word)
+    anagrams = set([''.join(p) for p in itertools.permutations(parts)])
+    print(anagrams)
+
+    # 一致する日本語の単語を見つける
+    matching_words = []
+    for anagram in anagrams:
+        if anagram in japanese_words.values():
+            # 対応する日本語の単語を追加
+            matching_words.extend([romaji for jap_word, romaji in japanese_words.items() if romaji == anagram])
+
+    print(matching_words)
+    #重複を除く
+    matching_words = list(set(matching_words))
+
+    return matching_words
 
 # ローマ字を特定のセットに分割するロジックを実装する
 def split_into_parts(romaji_word):
@@ -218,42 +238,47 @@ def generate_romaji_variants(romaji_word):
     romaji_variants = [romaji_word, replace_youon_with_normal(romaji_word)] + replace_normal_with_youon(romaji_word)
     return romaji_variants
 
-def three_letters_romaji_variants(romaji_word):
-    romaji_variants = []
-    # 最初の3文字と最後の3文字を追加
+def three_letters_romaji_variants_prefix(romaji_word):
     parts = split_into_parts(romaji_word)
     if len(parts) >= 5:
         prefix = ''.join(parts[:3])
-        suffix = ''.join(parts[-3:])
-        romaji_variants.append(prefix)
-        romaji_variants.append(suffix)
-        romaji_variants.append(replace_youon_with_normal(prefix))
-        romaji_variants.append(replace_youon_with_normal(suffix))
-        romaji_variants.append(generate_anagram_with_romaji_word(prefix))
-        romaji_variants.append(generate_anagram_with_romaji_word(suffix))
-        romaji_variants += replace_normal_with_youon(prefix)
-        romaji_variants += replace_normal_with_youon(suffix)
-    
-    
-    return romaji_variants
+        return process_part(prefix)
+    return []
 
-def two_letters_romaji_variants(romaji_word):
-    romaji_variants = []
-    # 最初の2文字と最後の2文字を追加
+def three_letters_romaji_variants_suffix(romaji_word):
+    parts = split_into_parts(romaji_word)
+    if len(parts) >= 5:
+        suffix = ''.join(parts[-3:])
+        return process_part(suffix)
+    return []
+
+
+def process_part(part):
+    variants = []
+    variants.append(part)
+    variants.append(replace_youon_with_normal(part))
+    variants += replace_normal_with_youon(part)
+    anagrams = generate_romaji_anagram_with_romaji_word(part)
+    variants += anagrams
+    for anagram in anagrams:
+        variants.append(replace_youon_with_normal(anagram))
+        variants += replace_normal_with_youon(anagram)
+    return variants
+
+def two_letters_romaji_variants_prefix(romaji_word):
     parts = split_into_parts(romaji_word)
     if len(parts) >= 4:
         prefix = ''.join(parts[:2])
+        return process_part(prefix)
+    return []
+
+def two_letters_romaji_variants_suffix(romaji_word):
+    parts = split_into_parts(romaji_word)
+    if len(parts) >= 4:
         suffix = ''.join(parts[-2:])
-        romaji_variants.append(prefix)
-        romaji_variants.append(suffix)
-        romaji_variants.append(replace_youon_with_normal(prefix))
-        romaji_variants.append(replace_youon_with_normal(suffix))
-        romaji_variants.append(generate_anagram_with_romaji_word(prefix))
-        romaji_variants.append(generate_anagram_with_romaji_word(suffix))
-        romaji_variants += replace_normal_with_youon(prefix)
-        romaji_variants += replace_normal_with_youon(suffix)
-    
-    return romaji_variants
+        return process_part(suffix)
+    return []
+
 
 @app.route('/get_youon_words', methods=['POST'])
 def get_youon_words():
@@ -312,8 +337,11 @@ def find_similar_and_anagrams():
 
     # ローマ字に変換
     romaji_word = convert_to_romaji(word)
-    two_letter_variants = two_letters_romaji_variants(romaji_word)
-    three_letter_variants = three_letters_romaji_variants(romaji_word)
+    two_letter_variants_prefix_list = two_letters_romaji_variants_prefix(romaji_word)
+    three_letters_romaji_variants_prefix_list = three_letters_romaji_variants_prefix(romaji_word)
+    two_letter_variants_suffix_list = two_letters_romaji_variants_suffix(romaji_word)
+    three_letters_romaji_variants_suffix_list = three_letters_romaji_variants_suffix(romaji_word)
+
 
     # 初期の閾値を設定（入力単語の長さの1/5）
     threshold = len(romaji_word) // 5
@@ -355,27 +383,25 @@ def find_similar_and_anagrams():
         if threshold > len(romaji_word):
             break
 
-    for variant in three_letter_variants:
+    for variant in three_letters_romaji_variants_prefix_list:
         for jap_word, romaji in japanese_words.items():
-            # variantがリストの場合、各要素をチェック
-            if isinstance(variant, list):
-                for v in variant:
-                    if v in romaji:
-                        similar_words.append(jap_word)
-            else:
-                if variant in romaji:
+                if romaji.endswith(variant):
+                    similar_words.append(jap_word)
+    
+    for variant in three_letters_romaji_variants_suffix_list:
+        for jap_word, romaji in japanese_words.items():
+                if romaji.startswith(variant):
                     similar_words.append(jap_word)
 
-    for variant in two_letter_variants:
+    for variant in two_letter_variants_prefix_list:
         for jap_word, romaji in japanese_words.items():
-            # variantがリストの場合、各要素をチェック
-            if isinstance(variant, list):
-                for v in variant:
-                    if v in romaji:
-                        similar_words.append(jap_word)
-            else:
-                if variant in romaji:
-                    similar_words.append(jap_word)
+            if romaji.endswith(variant):
+                similar_words.append(jap_word)
+    
+    for variant in two_letter_variants_suffix_list:
+        for jap_word, romaji in japanese_words.items():
+            if romaji.startswith(variant):
+                similar_words.append(jap_word)
                         
     # JSONレスポンスを生成して返す
     return Response(json.dumps(similar_words, ensure_ascii=False),
