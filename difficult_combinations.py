@@ -240,15 +240,17 @@ def evaluate_word(word):
             consecutive_counter = 0
 
         last_character_pair = current_character_pair
+
     
     #単純な拗音の数を数える
     youon_count = 0
     for part in parts:
         if len(part) > 2 or part in ["ja","ju","jo"]:
             youon_count += 1
-    
-    points += youon_count/len(parts) * 80
-
+    if youon_count > 1:
+        points += youon_count/len(parts) * 80
+    else:
+        points += youon_count/len(parts) * 10
     return points
 
 if __name__ == "__main__":
@@ -260,3 +262,6 @@ if __name__ == "__main__":
     print("バスガス爆発: ",evaluate_word("バスガス爆発"))
     print("この竹藪に竹立てかけたのは竹立てかけたかったから竹立てかけた: ",evaluate_word("この竹藪に竹立てかけたのは竹立てかけたかったから竹立てかけた"))
     print("かえるぴょこぴょこみぴょこぴょこ、あわせてぴょこぴょこむぴょこぴょこ",evaluate_word("かえるぴょこぴょこみぴょこぴょこ、あわせてぴょこぴょこむぴょこぴょこ"))
+    print("急にきゅうり九本食う子急増: ",evaluate_word("急にきゅうり九本食う子急増"))
+    print("きゅうりきゅうきゅう救急車",evaluate_word("きゅうきゅう"))
+    print("みんな三日三晩みかん食べた",evaluate_word("みんな三日三晩みかん食べた"))
