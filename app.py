@@ -197,21 +197,24 @@ def split_into_parts(romaji_word):
 
 def replace_youon_with_normal(romaji):
     replacements = {
-        'kya': 'ki', 'kyu': 'ki', 'kyo': 'ki',
-        'sya': 'si', 'syu': 'si', 'syo': 'si',
-        'tya': 'ti', 'tyu': 'ti', 'tyo': 'ti',
-        'nya': 'ni', 'nyu': 'ni', 'nyo': 'ni',
-        'hya': 'hi', 'hyu': 'hi', 'hyo': 'hi',
-        'mya': 'mi', 'myu': 'mi', 'myo': 'mi',
-        'rya': 'ri', 'ryu': 'ri', 'ryo': 'ri',
-        'gya': 'gi', 'gyu': 'gi', 'gyo': 'gi',
-        'ja': 'ji', 'ju': 'ji', 'jo': 'ji',
-        'bya': 'bi', 'byu': 'bi', 'byo': 'bi',
-        'pya': 'pi', 'pyu': 'pi', 'pyo': 'pi'
+        'kya': ['ka', 'ki', 'ku', 'ke', 'ko'], 'kyu': ['ka', 'ki', 'ku', 'ke', 'ko'], 'kyo': ['ka', 'ki', 'ku', 'ke', 'ko'],
+        'sya': ['sa', 'si', 'su', 'se', 'so'], 'syu': ['sa', 'si', 'su', 'se', 'so'], 'syo': ['sa', 'si', 'su', 'se', 'so'],
+        'tya': ['ta', 'ti', 'tu', 'te', 'to'], 'tyu': ['ta', 'ti', 'tu', 'te', 'to'], 'tyo': ['ta', 'ti', 'tu', 'te', 'to'],
+        'nya': ['na', 'ni', 'nu', 'ne', 'no'], 'nyu': ['na', 'ni', 'nu', 'ne', 'no'], 'nyo': ['na', 'ni', 'nu', 'ne', 'no'],
+        'hya': ['ha', 'hi', 'hu', 'he', 'ho'], 'hyu': ['ha', 'hi', 'hu', 'he', 'ho'], 'hyo': ['ha', 'hi', 'hu', 'he', 'ho'],
+        'mya': ['ma', 'mi', 'mu', 'me', 'mo'], 'myu': ['ma', 'mi', 'mu', 'me', 'mo'], 'myo': ['ma', 'mi', 'mu', 'me', 'mo'],
+        'rya': ['ra', 'ri', 'ru', 're', 'ro'], 'ryu': ['ra', 'ri', 'ru', 're', 'ro'], 'ryo': ['ra', 'ri', 'ru', 're', 'ro'],
+        'gya': ['ga', 'gi', 'gu', 'ge', 'go'], 'gyu': ['ga', 'gi', 'gu', 'ge', 'go'], 'gyo': ['ga', 'gi', 'gu', 'ge', 'go'],
+        'ja': ['za', 'zi', 'zu', 'ze', 'zo'], 'ju': ['za', 'zi', 'zu', 'ze', 'zo'], 'jo': ['za', 'zi', 'zu', 'ze', 'zo'],
+        'bya': ['ba', 'bi', 'bu', 'be', 'bo'], 'byu': ['ba', 'bi', 'bu', 'be', 'bo'], 'byo': ['ba', 'bi', 'bu', 'be', 'bo'],
+        'pya': ['pa', 'pi', 'pu', 'pe', 'po'], 'pyu': ['pa', 'pi', 'pu', 'pe', 'po'], 'pyo': ['pa', 'pi', 'pu', 'pe', 'po']
     }
-    for youon, normal in replacements.items():
-        romaji = romaji.replace(youon, normal)
-    return romaji
+    youon_variants = [romaji]
+    for youon, normals in replacements.items():
+        if youon in romaji:
+            for normal in normals:
+                youon_variants.append(romaji.replace(youon, normal))
+    return youon_variants
 
 def replace_normal_with_youon(romaji):
     replacements = {
@@ -235,7 +238,9 @@ def replace_normal_with_youon(romaji):
     return youon_variants
 
 def generate_romaji_variants(romaji_word):
-    romaji_variants = [romaji_word, replace_youon_with_normal(romaji_word)] + replace_normal_with_youon(romaji_word)
+    romaji_variants = [romaji_word]
+    romaji_variants.extend(replace_youon_with_normal(romaji_word))
+    romaji_variants.extend(replace_normal_with_youon(romaji_word))
     return romaji_variants
 
 def three_letters_romaji_variants_prefix(romaji_word):
@@ -256,12 +261,12 @@ def three_letters_romaji_variants_suffix(romaji_word):
 def process_part(part):
     variants = []
     variants.append(part)
-    variants.append(replace_youon_with_normal(part))
+    variants += replace_youon_with_normal(part)
     variants += replace_normal_with_youon(part)
     anagrams = generate_romaji_anagram_with_romaji_word(part)
     variants += anagrams
     for anagram in anagrams:
-        variants.append(replace_youon_with_normal(anagram))
+        variants += replace_youon_with_normal(anagram)
         variants += replace_normal_with_youon(anagram)
     return variants
 
