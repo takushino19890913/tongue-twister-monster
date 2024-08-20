@@ -6,6 +6,7 @@ import Levenshtein
 import pykakasi
 import itertools
 import requests
+from difficult_combinations import evaluate_word
 
 app = Flask(__name__)
 
@@ -68,14 +69,6 @@ def convert_to_romaji(text):
 
     return romaji
 
-#言いづらさを評価する評価関数
-def evaluate_word(word):
-    # wordのローマ字を取得
-    romaji = convert_to_romaji(word)
-    # ローマ字を特定のセットに分割する
-    parts = split_into_parts(romaji)
-    # ま行が多く含まれているとポイントゲット
-    points = sum(part in ['ma', 'mi', 'mu', 'me', 'mo'] for part in parts)
 
 
 def get_youon(word):
@@ -272,14 +265,14 @@ def process_part(part):
 
 def two_letters_romaji_variants_prefix(romaji_word):
     parts = split_into_parts(romaji_word)
-    if len(parts) >= 4:
+    if len(parts) >= 3:
         prefix = ''.join(parts[:2])
         return process_part(prefix)
     return []
 
 def two_letters_romaji_variants_suffix(romaji_word):
     parts = split_into_parts(romaji_word)
-    if len(parts) >= 4:
+    if len(parts) >= 3:
         suffix = ''.join(parts[-2:])
         return process_part(suffix)
     return []
@@ -349,8 +342,12 @@ def find_similar_and_anagrams():
 
 
     # 初期の閾値を設定（入力単語の長さの1/5）
-    threshold = len(romaji_word) // 5
+    base_threshold = max(1, len(romaji_word) // 5)
+    adjustment = max(0, (len(romaji_word) - 6) // 2)
+    threshold = base_threshold + adjustment
+    print("threshold: ", threshold)
     similar_words = []
+    romaji_set = set()
     while len(similar_words) <= 10:
         # 音が似ている単語を見つける
         similar_words = []
@@ -358,11 +355,15 @@ def find_similar_and_anagrams():
         for variant in romaji_variants:
             for jap_word, romaji in japanese_words.items():
                 if Levenshtein.distance(variant, romaji) <= threshold:
-                    similar_words.append(jap_word)
+                    if romaji not in romaji_set:
+                        similar_words.append(jap_word)
+                        romaji_set.add(romaji)
                 # wordとおなじ言葉を含んでいる単語を見つける
                 # 例: momo => sumomo
                 elif variant in romaji:
-                    similar_words.append(jap_word)
+                    if romaji not in romaji_set:
+                        similar_words.append(jap_word)
+                        romaji_set.add(romaji)
         anagrams = generate_anagrams(word)
 
         # アナグラムに似ている単語も追加
@@ -372,33 +373,45 @@ def find_similar_and_anagrams():
             for variant in anagram_variants:
                 for jap_word, romaji in japanese_words.items():
                     if Levenshtein.distance(anagram_romaji, romaji) <= threshold and jap_word not in similar_words:
-                        similar_words.append(jap_word)
+                        if romaji not in romaji_set:
+                            similar_words.append(jap_word)
+                            romaji_set.add(romaji)
                     # wordとおなじ言葉を含んでいる単語を見つける
                     # 例: momo => sumomo
                     elif anagram_romaji in romaji:
-                        similar_words.append(jap_word)
+                        if romaji not in romaji_set:
+                            similar_words.append(jap_word)
+                            romaji_set.add(romaji)
 
         # similar_wordsの重複を削除
         similar_words = list(set(similar_words))
         for variant in three_letters_romaji_variants_prefix_list:
             for jap_word, romaji in japanese_words.items():
-                if romaji.endswith(variant):
-                    similar_words.append(jap_word)
+                if romaji.endswith(variant) and evaluate_word(jap_word) > 0:
+                    if romaji not in romaji_set:
+                        similar_words.append(jap_word)
+                        romaji_set.add(romaji)
     
         for variant in three_letters_romaji_variants_suffix_list:
             for jap_word, romaji in japanese_words.items():
-                    if romaji.startswith(variant):
-                        similar_words.append(jap_word)
+                    if romaji.startswith(variant) and evaluate_word(jap_word) > 0:
+                        if romaji not in romaji_set:
+                            similar_words.append(jap_word)
+                            romaji_set.add(romaji)
 
         for variant in two_letter_variants_prefix_list:
             for jap_word, romaji in japanese_words.items():
-                if romaji.endswith(variant):
-                    similar_words.append(jap_word)
+                if romaji.endswith(variant) and evaluate_word(jap_word) > 0:
+                    if romaji not in romaji_set:
+                        similar_words.append(jap_word)
+                        romaji_set.add(romaji)
         
         for variant in two_letter_variants_suffix_list:
             for jap_word, romaji in japanese_words.items():
-                if romaji.startswith(variant):
-                    similar_words.append(jap_word)
+                if romaji.startswith(variant) and evaluate_word(jap_word) > 0:
+                    if romaji not in romaji_set:
+                        similar_words.append(jap_word)
+                        romaji_set.add(romaji)
                         
 
         # 閾値を増加させる

@@ -10,7 +10,7 @@ class FindSimilarAndAnagramsTestCase(unittest.TestCase):
     def test_find_similar_and_anagrams(self):
         # テストデータを設定
         test_data = {
-            'word': '早口'
+            'word': 'みかん'
         }
 
         # POSTリクエストを送信

@@ -3,7 +3,6 @@
 # xは、すべての子音音素のうちいずれかを表す - k,s,t,n,h,m,y,r,w,g,z,d,b,p,j,ty,py,hy,by,my,ry,ky,gy,sh,ny
 # lは、すべての母音音素のうちいずれかを表す - a,i,u,e,o
 # ? は、すべての文字のうちいずれかを表す
-from app import convert_to_romaji, split_into_parts
 
 from itertools import product
 
@@ -146,6 +145,7 @@ def decode_tuple(tup):
     return [tuple(item) for item in product(*decoded)]
 
 def evaluate_word(word):
+    from app import convert_to_romaji, split_into_parts
     # wordのローマ字を取得
     romaji = convert_to_romaji(word)
     # ローマ字を特定のセットに分割する
@@ -247,7 +247,27 @@ def evaluate_word(word):
         if len(part) > 2 or part in ["ja","ju","jo"]:
             youon_count += 1
     
-    points += youon_count/len(parts) * 80
+    if youon_count > 1:
+        points += youon_count/len(parts) * 80
+
+    #ま行、ば行、パ行のカウント
+    ma_count = 0
+    ba_count = 0
+    pa_count = 0
+    for part in parts:
+        if part[0] == "m":
+            ma_count += 1
+        elif part[0] == "b":
+            ba_count += 1
+        elif part[0] == "p":
+            pa_count += 1
+
+    if ma_count > 1:
+        points += ma_count/len(parts) * 40
+    if ba_count > 1:
+        points += ba_count/len(parts) * 40
+    if pa_count > 1:
+        points += pa_count/len(parts) * 40
 
     return points
 
@@ -260,3 +280,6 @@ if __name__ == "__main__":
     print("バスガス爆発: ",evaluate_word("バスガス爆発"))
     print("この竹藪に竹立てかけたのは竹立てかけたかったから竹立てかけた: ",evaluate_word("この竹藪に竹立てかけたのは竹立てかけたかったから竹立てかけた"))
     print("かえるぴょこぴょこみぴょこぴょこ、あわせてぴょこぴょこむぴょこぴょこ",evaluate_word("かえるぴょこぴょこみぴょこぴょこ、あわせてぴょこぴょこむぴょこぴょこ"))
+    print("管轄",evaluate_word("管轄"))
+    print("みんな三日三晩みかん食べる",evaluate_word("みんな三日三晩みかん食べる"))
+
